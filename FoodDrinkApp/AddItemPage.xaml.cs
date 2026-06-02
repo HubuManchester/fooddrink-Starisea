@@ -5,6 +5,9 @@ namespace FoodDrinkApp;
 
 public partial class AddItemPage : ContentPage
 {
+    // Milestone 1: Temporary storage for the captured photo path
+    private string _capturedPhotoPath = string.Empty;
+
     public AddItemPage()
     {
         InitializeComponent();
@@ -102,5 +105,52 @@ public partial class AddItemPage : ContentPage
         ValidationLabel.Text = message;
         ValidationPanel.IsVisible = true;
         SemanticScreenReader.Announce(message);
+    }
+
+    // ================= Milestone 1: Camera Hardware Events =================
+
+    private async void OnFormTakePhotoClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!MediaPicker.Default.IsCaptureSupported)
+            {
+                ShowValidation("Camera capture is not supported on this device.");
+                return;
+            }
+
+            FileResult photo = await MediaPicker.Default.CapturePhotoAsync();
+            if (photo != null)
+            {
+                // Cache the photo to the local temporary directory
+                string localFilePath = Path.Combine(FileSystem.CacheDirectory, photo.FileName);
+                using Stream sourceStream = await photo.OpenReadAsync();
+                using FileStream localFileStream = File.OpenWrite(localFilePath);
+                await sourceStream.CopyToAsync(localFileStream);
+
+                _capturedPhotoPath = localFilePath;
+                FormImagePreview.Source = ImageSource.FromFile(localFilePath);
+                FormImagePreview.IsVisible = true;
+
+                HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+                SemanticScreenReader.Announce("Food photo attached successfully.");
+            }
+        }
+        catch (PermissionException)
+        {
+            ShowValidation("Camera permission denied. Please allow camera access in device settings.");
+        }
+        catch (Exception ex)
+        {
+            ShowValidation($"Camera error: {ex.Message}");
+        }
+    }
+
+    private void OnFormClearPhotoClicked(object sender, EventArgs e)
+    {
+        _capturedPhotoPath = string.Empty;
+        FormImagePreview.IsVisible = false;
+        FormImagePreview.Source = null;
+        SemanticScreenReader.Announce("Photo removed.");
     }
 }
