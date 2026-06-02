@@ -5,7 +5,6 @@ namespace FoodDrinkApp;
 
 public partial class AddItemPage : ContentPage
 {
-    // Milestone 1: Temporary storage for the captured photo path
     private string _capturedPhotoPath = string.Empty;
 
     public AddItemPage()
@@ -19,7 +18,7 @@ public partial class AddItemPage : ContentPage
         AccessibilityService.ApplyFontScale(this);
     }
 
-    private async void OnSaveClicked(object? sender, EventArgs e)
+    public async void OnSaveClicked(object? sender, EventArgs e)
     {
         try
         {
@@ -43,7 +42,9 @@ public partial class AddItemPage : ContentPage
                 AllergyNote = string.IsNullOrWhiteSpace(AllergyEntry.Text)
                     ? "No allergy note provided."
                     : AllergyEntry.Text.Trim(),
-                Tags = $"{NameEntry.Text} {CategoryPicker.SelectedItem} {DescriptionEditor.Text}"
+                ImagePath = _capturedPhotoPath,
+                LocationName = FormLocationEntry.Text ?? string.Empty,
+                Tags = $"{NameEntry.Text} {CategoryPicker.SelectedItem} {DescriptionEditor.Text} {FormLocationEntry.Text}"
             };
 
             await FoodCatalogService.AddAsync(item);
@@ -107,9 +108,8 @@ public partial class AddItemPage : ContentPage
         SemanticScreenReader.Announce(message);
     }
 
-    // ================= Milestone 1: Camera Hardware Events =================
-
-    private async void OnFormTakePhotoClicked(object sender, EventArgs e)
+    
+    public async void OnFormTakePhotoClicked(object? sender, EventArgs e)
     {
         try
         {
@@ -122,7 +122,6 @@ public partial class AddItemPage : ContentPage
             FileResult photo = await MediaPicker.Default.CapturePhotoAsync();
             if (photo != null)
             {
-                // Cache the photo to the local temporary directory
                 string localFilePath = Path.Combine(FileSystem.CacheDirectory, photo.FileName);
                 using Stream sourceStream = await photo.OpenReadAsync();
                 using FileStream localFileStream = File.OpenWrite(localFilePath);
@@ -138,7 +137,7 @@ public partial class AddItemPage : ContentPage
         }
         catch (PermissionException)
         {
-            ShowValidation("Camera permission denied. Please allow camera access in device settings.");
+            ShowValidation("Camera permission denied.");
         }
         catch (Exception ex)
         {
@@ -146,11 +145,53 @@ public partial class AddItemPage : ContentPage
         }
     }
 
-    private void OnFormClearPhotoClicked(object sender, EventArgs e)
+    public void OnFormClearPhotoClicked(object? sender, EventArgs e)
     {
         _capturedPhotoPath = string.Empty;
         FormImagePreview.IsVisible = false;
         FormImagePreview.Source = null;
         SemanticScreenReader.Announce("Photo removed.");
+    }
+
+   
+    public async void OnFormLocateClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            FormLocationEntry.Text = "Locating via satellites...";
+            var request = new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(8));
+            var location = await Geolocation.Default.GetLocationAsync(request);
+
+            if (location is null)
+            {
+                FormLocationEntry.Text = "GPS context unavailable.";
+                return;
+            }
+
+            var placemarks = await Geocoding.Default.GetPlacemarksAsync(location);
+            var placemark = placemarks?.FirstOrDefault();
+
+            if (placemark is not null)
+            {
+                FormLocationEntry.Text = $"{placemark.Locality ?? placemark.AdminArea}, {placemark.Thoroughfare ?? "Nearby"}";
+            }
+            else
+            {
+                FormLocationEntry.Text = $"Lat: {location.Latitude:F3}, Lng: {location.Longitude:F3}";
+            }
+
+            HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+            SemanticScreenReader.Announce("Location sync complete.");
+        }
+        catch (PermissionException)
+        {
+            FormLocationEntry.Text = string.Empty;
+            ShowValidation("Location permission denied.");
+        }
+        catch (Exception ex)
+        {
+            FormLocationEntry.Text = string.Empty;
+            ShowValidation($"GPS error: {ex.Message}");
+        }
     }
 }

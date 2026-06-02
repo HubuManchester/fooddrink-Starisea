@@ -115,6 +115,19 @@
                            Aspect="AspectFit" 
                            IsVisible="False" 
                            Margin="0,5,0,0" />
+
+                    <Label Text="Dining Location (Hardware - GPS)" FontSize="15" FontAttributes="Bold" TextColor="{AppThemeBinding Light=#2F7A4F, Dark=#8CE6A1}" Margin="0,6,0,0" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Entry x:Name="FormLocationEntry" 
+                               Placeholder="Fetch location via GPS" 
+                               IsReadOnly="True" />
+                        <Button Grid.Column="1" 
+                                Text="Locate" 
+                                BackgroundColor="#F29B38" 
+                                TextColor="#3A2518" 
+                                Clicked="OnFormLocateClicked" 
+                                SemanticProperties.Hint="Fetch location via GPS coordinates" />
+                    </Grid>
                 </VerticalStackLayout>
             </Border>
 
