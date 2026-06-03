@@ -53,6 +53,32 @@ public partial class FoodDetailPage : ContentPage
         DescriptionLabel.Text = currentItem.Description;
         AllergyLabel.Text = currentItem.AllergyNote;
         SemanticProperties.SetDescription(NameLabel, currentItem.AccessibleSummary);
+
+        bool hasHardwareData = false;
+
+        if (!string.IsNullOrWhiteSpace(currentItem.ImagePath) && File.Exists(currentItem.ImagePath))
+        {
+            DetailPhoto.Source = ImageSource.FromFile(currentItem.ImagePath);
+            DetailPhoto.IsVisible = true;
+            hasHardwareData = true;
+        }
+        else
+        {
+            DetailPhoto.IsVisible = false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentItem.LocationName))
+        {
+            DetailLocation.Text = $"GPS Location: {currentItem.LocationName}";
+            DetailLocation.IsVisible = true;
+            hasHardwareData = true;
+        }
+        else
+        {
+            DetailLocation.IsVisible = false;
+        }
+
+        HardwareDataBorder.IsVisible = hasHardwareData;
     }
 
     private async void OnSpeakClicked(object? sender, EventArgs e)

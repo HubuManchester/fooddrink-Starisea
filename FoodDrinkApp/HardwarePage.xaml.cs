@@ -58,7 +58,8 @@ public partial class HardwarePage : ContentPage
         }
     }
 
-    private async void OnGetLocationClicked(object? sender, EventArgs e)
+    // RENAMED HERE to perfectly match your XAML file
+    private async void OnLocateClicked(object? sender, EventArgs e)
     {
         try
         {
